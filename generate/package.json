@@ -1,0 +1,9 @@
+{
+    "name": "love2d-types-generator",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Generates the Nebra declarations for LÖVE from the love-api tables.",
+    "scripts": {
+        "generate": "node generate.js"
+    }
+}
