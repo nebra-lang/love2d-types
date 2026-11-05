@@ -222,12 +222,35 @@ function optionalType(type) {
     return type.split(' | ').includes('nil') ? type : `${type} | nil`;
 }
 
+// The arguments of a variant with its vararg last, as Nebra requires: love-api lists some
+// arguments after the vararg, such as `clearstencil` after the canvas colors of
+// `love.graphics.clear`, and those join the vararg, typed as the union of all their types.
+function signatureArguments(variant) {
+    const all = variant.arguments || [];
+    const varargIndex = all.findIndex(argument => argument.name === '...');
+    if (varargIndex < 0) {
+        return { fixed: all, varargType: null };
+    }
+
+    const types = [];
+    for (const argument of all.slice(varargIndex)) {
+        const type = entryType(argument);
+        const member = argument.name !== '...' && 'default' in argument ? optionalType(type) : type;
+        for (const part of member.split(' | ')) {
+            if (!types.includes(part)) types.push(part);
+        }
+    }
+    return { fixed: all.slice(0, varargIndex), varargType: types.join(' | ') };
+}
+
 function parameterList(variant) {
-    return (variant.arguments || []).map(argument => {
-        if (argument.name === '...') return `...: ${entryType(argument)}`;
+    const { fixed, varargType } = signatureArguments(variant);
+    const parameters = fixed.map(argument => {
         const type = entryType(argument);
         return `${safeIdent(argument.name)}: ${'default' in argument ? optionalType(type) : type}`;
-    }).join(', ');
+    });
+    if (varargType !== null) parameters.push(`...: ${varargType}`);
+    return parameters.join(', ');
 }
 
 function returnType(variant) {
@@ -346,9 +369,9 @@ function emitModule(module) {
 // anything, which LÖVE ignores.
 function callbackType(callback) {
     const variant = (callback.variants || [{}])[0];
-    const parameters = (variant.arguments || []).map(argument => argument.name === '...'
-        ? `...${grouped(entryType(argument))}`
-        : entryType(argument));
+    const { fixed, varargType } = signatureArguments(variant);
+    const parameters = fixed.map(argument => entryType(argument));
+    if (varargType !== null) parameters.push(`...${grouped(varargType)}`);
     const returns = variant.returns || [];
     const result = returns.length === 0 ? 'any' : optionalType(entryType(returns[0]));
     return `(${parameters.join(', ')}) -> ${result}`;

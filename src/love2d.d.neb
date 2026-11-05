@@ -4217,7 +4217,7 @@ declare interface LoveGraphics
     --- @param ... Additional tables for each active Canvas.
     --- @param clearstencil Whether to clear the active stencil buffer, if present. It can also be an integer between 0 and 255 to clear the stencil buffer to a specific value.
     --- @param cleardepth Whether to clear the active depth buffer, if present. It can also be a number between 0 and 1 to clear the depth buffer to a specific value.
-    function clear(color: number[], ...: number[], clearstencil: boolean | nil, cleardepth: boolean | nil): nil
+    function clear(color: number[], ...: number[] | boolean | nil): nil
     --- Clears the screen or active Canvas to the specified color.
     --- This function is called automatically before love.draw in the default love.run function. See the example in love.run for a typical use of this function.
     --- Note that the scissor area bounds the cleared region.
